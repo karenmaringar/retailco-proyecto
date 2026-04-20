@@ -1,0 +1,79 @@
+import csv
+
+# Lista donde guardaremos todos los datos
+datos = []
+
+# Abrimos el archivo
+with open("Amazon Sale Report.csv", encoding="utf-8") as archivo:
+    lector = csv.DictReader(archivo)
+    for fila in lector:
+        datos.append(fila)
+
+# Verificamos cuántos registros cargamos
+print(f"Total de registros cargados: {len(datos)}")
+
+# Vemos cómo luce el primer registro
+print(datos[0])
+# Tarea 3 — Total de ventas con try/except
+total_ventas = 0
+registros_fallidos = 0
+
+total_ventas = sum(
+    [float(fila["Amount"]) 
+     for fila in datos 
+     if fila["Amount"].strip() != ""]
+)
+
+# Contar registros que fallaron
+for fila in datos:
+    try:
+        float(fila["Amount"])
+    except (ValueError, KeyError):
+        registros_fallidos += 1
+
+print(f"Total de ventas: {total_ventas:,.2f}")
+print(f"Registros fallidos: {registros_fallidos}")
+
+# Paso 1 — Agrupar Qty por SKU
+qty_por_sku = {}
+
+for fila in datos:
+    sku = fila["SKU"]
+    try:
+        qty = int(fila["Qty"])
+    except:
+        qty = 0
+    
+    if sku in qty_por_sku:
+        qty_por_sku[sku] += qty
+    else:
+        qty_por_sku[sku] = qty
+
+# Paso 2 — Ordenar y tomar los top 5
+top5 = sorted(qty_por_sku.items(), key=lambda x: x[1], reverse=True)[:5]
+
+# Paso 3 — Mostrar resultados
+print("\nTop 5 SKU con mayor cantidad vendida:")
+for sku, qty in top5:
+    print(f"SKU: {sku} → {qty} unidades")
+
+    import csv
+
+# Los SKU top 5 que encontramos
+skus_top5 = [sku for sku, qty in top5]
+
+# Filtramos solo las filas de esos SKU
+ordenes_filtradas = [
+    fila for fila in datos 
+    if fila["SKU"] in skus_top5
+]
+
+# Escribimos el nuevo archivo CSV
+with open("ordenes_filtradas.csv", "w", newline="", encoding="utf-8") as archivo:
+    columnas = ["Order ID", "SKU", "Amount", "Qty"]
+    escritor = csv.DictWriter(archivo, fieldnames=columnas, extrasaction="ignore")
+    
+    escritor.writeheader()
+    escritor.writerows(ordenes_filtradas)
+
+print(f"Archivo creado con {len(ordenes_filtradas)} registros ✅")
